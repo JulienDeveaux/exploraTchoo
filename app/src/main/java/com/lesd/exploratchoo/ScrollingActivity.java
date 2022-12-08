@@ -58,7 +58,7 @@ public class ScrollingActivity extends AppCompatActivity
         {
             try
             {
-                SNCFResponse response = service.getHoraires(Sncf.Type.ARRIVALS);
+                SNCFResponse response = service.getHoraires(Sncf.QueryType.ARRIVALS);
 
                 String text = Arrays.stream(response.arrivals)
                         .map(arrDep -> arrDep.display_informations.name)

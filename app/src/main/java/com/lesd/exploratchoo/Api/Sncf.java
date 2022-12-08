@@ -7,18 +7,19 @@ import com.google.firebase.crashlytics.buildtools.reloc.org.apache.http.client.H
 import com.google.firebase.crashlytics.buildtools.reloc.org.apache.http.client.methods.HttpGet;
 import com.google.firebase.crashlytics.buildtools.reloc.org.apache.http.impl.client.HttpClientBuilder;
 import com.google.firebase.crashlytics.buildtools.reloc.org.apache.http.message.BasicHeader;
+import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.lesd.exploratchoo.Api.models.SNCFResponse;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.stream.Collectors;
 
 public class Sncf
 {
     public static final String BASE_URL = "https://api.sncf.com/v1/coverage/sncf/";
 
     private final HttpClient client;
+    private final Gson gson;
 
     public Sncf()
     {
@@ -30,11 +31,13 @@ public class Sncf
                 .create()
                 .setDefaultHeaders(defaultHeaders)
                 .build();
+
+        this.gson = new GsonBuilder().create();
     }
 
-    public SNCFResponse getHoraires(Type type) throws IOException
+    public SNCFResponse getHoraires(QueryType type) throws IOException
     {
-        String url = BASE_URL + "stop_areas/stop_area:SNCF:87413013/";
+        String url = BASE_URL + "stop_areas/stop_area:SNCF:87413013/?data_freshness=realtime";
 
         switch (type)
         {
@@ -49,7 +52,17 @@ public class Sncf
         HttpResponse response = this.client.execute(new HttpGet(url));
 
         HttpEntity entity = response.getEntity();
+        String content = this.readContent(entity);
 
+        SNCFResponse sncfResponse = this.gson.fromJson(content, SNCFResponse.class);
+
+        sncfResponse.queryType = type;
+
+        return sncfResponse;
+    }
+
+    private String readContent(HttpEntity entity) throws IOException
+    {
         ArrayList<Byte> bytes = new ArrayList<>();
         byte current = -1;
 
@@ -67,19 +80,17 @@ public class Sncf
         for (int i = 0; i < bytes.size(); i++)
             bytesArray[i] = bytes.get(i);
 
-        String content = new String(bytesArray);
-
-        return new GsonBuilder().create().fromJson(content, SNCFResponse.class);
+        return new String(bytesArray);
     }
 
-    public enum Type
+    public enum QueryType
     {
         DEPARTURES("departures"),
         ARRIVALS("arrivals");
 
         private final String value;
 
-        Type(String value)
+        QueryType(String value)
         {
             this.value = value;
         }
