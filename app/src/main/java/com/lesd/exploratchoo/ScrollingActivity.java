@@ -61,7 +61,7 @@ public class ScrollingActivity extends AppCompatActivity
                 SNCFResponse response = service.getHoraires(Sncf.Type.ARRIVALS);
 
                 String text = Arrays.stream(response.arrivals)
-                        .map(arrDep -> arrDep.display_informations.headsign)
+                        .map(arrDep -> arrDep.display_informations.name)
                         .collect(Collectors.joining(", "));
 
                 runOnUiThread(() -> textView.setText(text));

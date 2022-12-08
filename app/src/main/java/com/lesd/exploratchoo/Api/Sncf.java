@@ -12,6 +12,7 @@ import com.lesd.exploratchoo.Api.models.SNCFResponse;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.stream.Collectors;
 
 public class Sncf
 {
@@ -33,7 +34,7 @@ public class Sncf
 
     public SNCFResponse getHoraires(Type type) throws IOException
     {
-        String url = BASE_URL + "/stop_areas/stop_area:SNCF:87413013/";
+        String url = BASE_URL + "stop_areas/stop_area:SNCF:87413013/";
 
         switch (type)
         {
@@ -49,11 +50,24 @@ public class Sncf
 
         HttpEntity entity = response.getEntity();
 
-        byte[] bytes = new byte[(int) entity.getContentLength()];
+        ArrayList<Byte> bytes = new ArrayList<>();
+        byte current = -1;
 
-        int res = entity.getContent().read(bytes, 0, bytes.length);
+        do
+        {
+            current = (byte) entity.getContent().read();
 
-        String content = new String(bytes);
+            if (current > -1)
+                bytes.add(current);
+        }
+        while (current > -1);
+
+        byte[] bytesArray = new byte[bytes.size()];
+
+        for (int i = 0; i < bytes.size(); i++)
+            bytesArray[i] = bytes.get(i);
+
+        String content = new String(bytesArray);
 
         return new GsonBuilder().create().fromJson(content, SNCFResponse.class);
     }
