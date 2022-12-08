@@ -1,13 +1,10 @@
 package com.lesd.exploratchoo.Api;
 
-import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.lesd.exploratchoo.Api.models.SNCFResponse;
 
 import org.apache.hc.client5.http.classic.HttpClient;
 import org.apache.hc.client5.http.classic.methods.HttpGet;
-import org.apache.hc.client5.http.classic.methods.HttpPost;
-import org.apache.hc.client5.http.config.RequestConfig;
 import org.apache.hc.client5.http.impl.classic.HttpClientBuilder;
 import org.apache.hc.core5.http.Header;
 import org.apache.hc.core5.http.HttpResponse;
@@ -34,12 +31,42 @@ public class Sncf
                 .build();
     }
 
-    public SNCFResponse get(String url) throws IOException
+    public SNCFResponse getHoraires(Type type) throws IOException
     {
+        String url = BASE_URL + "/stop_areas/stop_area:SNCF:87413013/";
+
+        switch (type)
+        {
+            case ARRIVALS:
+                url += "arrivals";
+                break;
+            case DEPARTURES:
+                url += "departures";
+                break;
+        }
+
         HttpResponse response = this.client.execute(new HttpGet(url));
 
         String json = response.toString();
 
         return new GsonBuilder().create().fromJson(json, SNCFResponse.class);
+    }
+
+    public enum Type
+    {
+        DEPARTURES("departures"),
+        ARRIVALS("arrivals");
+
+        private final String value;
+
+        Type(String value)
+        {
+            this.value = value;
+        }
+
+        public String getValue()
+        {
+            return value;
+        }
     }
 }

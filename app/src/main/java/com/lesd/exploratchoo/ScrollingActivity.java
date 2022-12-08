@@ -12,8 +12,14 @@ import androidx.appcompat.widget.Toolbar;
 import android.view.View;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.widget.TextView;
 
+import com.lesd.exploratchoo.Api.Sncf;
+import com.lesd.exploratchoo.Api.models.SNCFResponse;
 import com.lesd.exploratchoo.databinding.ActivityScrollingBinding;
+
+import java.util.Arrays;
+import java.util.stream.Collectors;
 
 public class ScrollingActivity extends AppCompatActivity
 {
@@ -24,6 +30,22 @@ public class ScrollingActivity extends AppCompatActivity
     protected void onCreate(Bundle savedInstanceState)
     {
         super.onCreate(savedInstanceState);
+
+        Sncf service = new Sncf();
+
+        String message = "";
+
+        try
+        {
+            SNCFResponse response = service.getHoraires(Sncf.Type.ARRIVALS);
+
+            message = Arrays.stream(response.arrivals).map(arrDep -> arrDep.display_informations.name).collect(Collectors.joining(", "));
+        }
+        catch (Exception e)
+        {
+            message = e.getMessage();
+            e.printStackTrace();
+        }
 
         binding = ActivityScrollingBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
@@ -43,6 +65,10 @@ public class ScrollingActivity extends AppCompatActivity
                         .setAction("Action", null).show();
             }
         });
+
+        TextView textView = binding.contentScrolling.textView;
+
+        textView.setText(message);
     }
 
     @Override
