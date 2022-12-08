@@ -32,7 +32,7 @@ public class RecyclerViewAdapter extends RecyclerView.Adapter<ItemViewHolder>
         this.listElements.clear();
         this.listElements.addAll(Arrays.asList(newElements));
 
-        this.notifyDataSetChanged();
+        this.notifyItemRangeChanged(0, this.getItemCount());
     }
 
     @NonNull
