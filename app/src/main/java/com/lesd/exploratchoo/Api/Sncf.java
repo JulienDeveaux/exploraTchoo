@@ -35,9 +35,27 @@ public class Sncf
         this.gson = new GsonBuilder().create();
     }
 
+    /**
+     * Le Havre station ID: SNCF:87413013 in default
+     * @param type The type of query to perform
+     * @return The response from the API
+     * @throws IOException If the API call fails
+     */
     public SNCFResponse getHoraires(QueryType type) throws IOException
     {
-        String url = BASE_URL + "stop_areas/stop_area:SNCF:87413013/?data_freshness=realtime";
+        return getHoraires(type, SncfLocations.LE_HAVRE);
+    }
+
+    /**
+     *
+     * @param type The type of query to perform
+     * @param location The location to query
+     * @return The response from the API
+     * @throws IOException If the API call fails
+     */
+    public SNCFResponse getHoraires(QueryType type, SncfLocations location) throws IOException
+    {
+        String url = BASE_URL + "stop_areas/stop_area:" + location + "/?data_freshness=realtime";
 
         switch (type)
         {
