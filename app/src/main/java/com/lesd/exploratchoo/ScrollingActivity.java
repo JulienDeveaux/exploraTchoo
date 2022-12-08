@@ -7,6 +7,7 @@ import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
+import androidx.recyclerview.widget.RecyclerView;
 
 import android.text.Html;
 import android.view.View;
@@ -29,7 +30,13 @@ public class ScrollingActivity extends AppCompatActivity
 {
 
     private ActivityScrollingBinding binding;
-    Sncf service;
+    private Sncf service;
+
+    private RecyclerViewAdapter arrivals;
+    private RecyclerViewAdapter departures;
+
+    private TextView textArrivals;
+    private TextView textDepartures;
 
     @Override
     protected void onCreate(Bundle savedInstanceState)
@@ -41,23 +48,29 @@ public class ScrollingActivity extends AppCompatActivity
         binding = ActivityScrollingBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
 
+        RecyclerView arrivalsRecyclerView = binding.contentScrolling.arrivalsRecyclerView;
+        RecyclerView departuresRecyclerView = binding.contentScrolling.departRecyclerView;
+
+        this.arrivals = new RecyclerViewAdapter(new ArrDep[0]);
+        this.departures = new RecyclerViewAdapter(new ArrDep[0]);
+
+        this.textArrivals = binding.contentScrolling.textArrive;
+        this.textDepartures = binding.contentScrolling.textDepart;
+
+        assert arrivalsRecyclerView != null;
+        arrivalsRecyclerView.setAdapter(this.arrivals);
+        assert departuresRecyclerView != null;
+        departuresRecyclerView.setAdapter(this.departures);
+
         Toolbar toolbar = binding.toolbar;
         setSupportActionBar(toolbar);
         CollapsingToolbarLayout toolBarLayout = binding.toolbarLayout;
         toolBarLayout.setTitle(getTitle());
 
-        TextView textView = binding.contentScrolling.textView;
-        refreshList(textView);
+        refreshList();
 
         FloatingActionButton fab = binding.fab;
-        fab.setOnClickListener(new View.OnClickListener()
-        {
-            @Override
-            public void onClick(View view)
-            {
-                refreshList(textView);
-            }
-        });
+        fab.setOnClickListener(view -> refreshList());
     }
 
     @Override
@@ -84,70 +97,42 @@ public class ScrollingActivity extends AppCompatActivity
         return super.onOptionsItemSelected(item);
     }
 
-    public void refreshList(TextView textView) {
-        StringBuilder Arrivals = new StringBuilder();
-        StringBuilder Departures = new StringBuilder();
+    public void refreshList()
+    {
         new Thread(() ->
         {
-            try {
-                SNCFResponse response = service.getHoraires(Sncf.QueryType.ARRIVALS);
+            SNCFResponse arrivals = null;
+            SNCFResponse departures = null;
+            Exception ex = null;
 
-                Arrivals.append("Provenance|");
-                Arrivals.append("Type|");
-                Arrivals.append("Départ|");
-                Arrivals.append("Arrivé<br>");
-                for (ArrDep arrDep : response.arrivals) {
-                    Arrivals.append(arrDep.display_informations.label).append("|");
-                    Arrivals.append(arrDep.display_informations.physical_mode).append("|");
-                    Arrivals.append(
-                            arrDep.stop_date_time.getDepartureDateTime()
-                                    .format(new DateTimeFormatterBuilder()
-                                            .appendValue(ChronoField.YEAR)
-                                            .appendLiteral(", ")
-                                            .appendValue(ChronoField.MONTH_OF_YEAR)
-                                            .appendLiteral(", ")
-                                            .appendValue(ChronoField.DAY_OF_MONTH)
-                                            .toFormatter())).append("|");
-                    Arrivals.append(arrDep.stop_date_time.getArrivalDateTime()).append("<br>");
-                }
+            try
+            {
+                arrivals = service.getHoraires(Sncf.QueryType.ARRIVALS);
+                departures = service.getHoraires(Sncf.QueryType.DEPARTURES);
+
+                SNCFResponse finalArrivals = arrivals;
+                SNCFResponse finalDepartures = departures;
+                runOnUiThread(() ->
+                {
+                  this.arrivals.changeList(finalArrivals.arrivals);
+                  this.departures.changeList(finalDepartures.departures);
+                });
             }
             catch (Exception e)
             {
-                Arrivals.append("Error while fetching Arrivals : ").append(e.getMessage());
-
                 e.printStackTrace();
+
+                ex = e;
             }
 
-            try {
-                SNCFResponse response = service.getHoraires(Sncf.QueryType.DEPARTURES);
-
-                Departures.append("Destination|");
-                Departures.append("Type|");
-                Departures.append("Départ|");
-                Departures.append("Arrivé<br>");
-                for (ArrDep arrDep : response.departures) {
-                    Departures.append(arrDep.display_informations.direction).append("|");
-                    Departures.append(arrDep.display_informations.physical_mode).append("|");
-                    Departures.append(
-                            arrDep.stop_date_time.getDepartureDateTime()
-                            .format(new DateTimeFormatterBuilder()
-                                    .appendValue(ChronoField.YEAR)
-                                    .appendLiteral(", ")
-                                    .appendValue(ChronoField.MONTH_OF_YEAR)
-                                    .appendLiteral(", ")
-                                    .appendValue(ChronoField.DAY_OF_MONTH)
-                                    .toFormatter())).append("|");
-                    Departures.append(arrDep.stop_date_time.getArrivalDateTime()).append("<br>");
-                }
-            }
-            catch (Exception e)
+            if(ex != null)
             {
-                Departures.append("Error while fetching Departures : ").append(e.getMessage());
+                String baseText = "Erreur lors de la récupération des données " + (arrivals != null ? "d'arrivées" : "de départ") + "\n" + ex.getMessage();
 
-                e.printStackTrace();
+                this.textDepartures.setText("");
+                this.textArrivals.setText(baseText);
             }
-            String finalResult = "<h1>Arrivées du Havre : </h1>\n" + Arrivals + "\n<h1>Départs du Havre : </h1>\n" + Departures;
-            runOnUiThread(() -> textView.setText(Html.fromHtml(finalResult, 0)));
+
         }).start();
     }
 }
