@@ -1,30 +1,26 @@
 package com.lesd.exploratchoo;
 
+import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 
 import com.google.android.material.appbar.CollapsingToolbarLayout;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
+import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 import androidx.recyclerview.widget.RecyclerView;
 
-import android.text.Html;
-import android.view.View;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.TextView;
 
 import com.lesd.exploratchoo.Api.Sncf;
+import com.lesd.exploratchoo.Api.SncfLocations;
 import com.lesd.exploratchoo.Api.models.ArrDep;
 import com.lesd.exploratchoo.Api.models.SNCFResponse;
 import com.lesd.exploratchoo.databinding.ActivityScrollingBinding;
-
-import java.time.format.DateTimeFormatterBuilder;
-import java.time.temporal.ChronoField;
-import java.util.Arrays;
-import java.util.Formatter;
-import java.util.stream.Collectors;
 
 public class ScrollingActivity extends AppCompatActivity
 {
@@ -42,8 +38,6 @@ public class ScrollingActivity extends AppCompatActivity
     protected void onCreate(Bundle savedInstanceState)
     {
         super.onCreate(savedInstanceState);
-
-        service = new Sncf();
 
         binding = ActivityScrollingBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
@@ -67,10 +61,85 @@ public class ScrollingActivity extends AppCompatActivity
         CollapsingToolbarLayout toolBarLayout = binding.toolbarLayout;
         toolBarLayout.setTitle(getTitle());
 
-        refreshList();
-
         FloatingActionButton fab = binding.fab;
-        fab.setOnClickListener(view -> refreshList());
+        fab.setOnClickListener(view -> loadDatas());
+
+        this.loadDatas();
+    }
+
+    private void loadDatas()
+    {
+        SharedPreferences preferences = this.getSharedPreferences("com.lesd.exploratchoo", MODE_PRIVATE);
+
+        String api_key = preferences.getString("api_key", null);
+
+        service = new Sncf(api_key);
+
+        if(api_key == null || api_key.isEmpty())
+        {
+            runOnUiThread(() ->
+            {
+              this.textArrivals.setText(R.string.no_api_key);
+              this.textDepartures.setText("");
+            });
+        }
+        else
+        {
+            new Thread(() ->
+            {
+               SNCFResponse arrivals = null;
+               SNCFResponse departures = null;
+               Exception ex = null;
+
+               try
+               {
+                   arrivals = service.getHoraires(Sncf.QueryType.ARRIVALS);
+                   departures = service.getHoraires(Sncf.QueryType.DEPARTURES);
+
+                   SNCFResponse finalArrivals = arrivals;
+                   SNCFResponse finalDepartures = departures;
+                   runOnUiThread(() ->
+                                 {
+                                     String tmp = "Arrivées de " + SncfLocations.LE_HAVRE.getDisplayName();
+
+                                     this.textArrivals.setText(tmp);
+
+                                     tmp = "Départs de " + SncfLocations.LE_HAVRE.getDisplayName();
+
+                                     this.textDepartures.setText(tmp);
+
+                                     this.arrivals.changeList(finalArrivals.arrivals);
+                                     this.departures.changeList(finalDepartures.departures);
+                                 });
+               }
+               catch (Exception e)
+               {
+                   e.printStackTrace();
+
+                   ex = e;
+               }
+
+               if(ex != null)
+               {
+                   String baseText = "Erreur lors de la récupération des données " + (arrivals != null ? "d'arrivées" : "de départ") + "\n" + ex.getMessage();
+
+                   runOnUiThread(() ->
+                                 {
+                                     this.textDepartures.setText("");
+                                     this.textArrivals.setText(baseText);
+                                 });
+               }
+
+            }).start();
+        }
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data)
+    {
+        this.loadDatas();
+
+        super.onActivityResult(requestCode, resultCode, data);
     }
 
     @Override
@@ -92,47 +161,10 @@ public class ScrollingActivity extends AppCompatActivity
         //noinspection SimplifiableIfStatement
         if (id == R.id.action_settings)
         {
-            return true;
+            Intent intent = new Intent(this, SettingsActivity.class);
+
+            startActivityForResult(intent, Intent.FLAG_ACTIVITY_FORWARD_RESULT);
         }
         return super.onOptionsItemSelected(item);
-    }
-
-    public void refreshList()
-    {
-        new Thread(() ->
-        {
-            SNCFResponse arrivals = null;
-            SNCFResponse departures = null;
-            Exception ex = null;
-
-            try
-            {
-                arrivals = service.getHoraires(Sncf.QueryType.ARRIVALS);
-                departures = service.getHoraires(Sncf.QueryType.DEPARTURES);
-
-                SNCFResponse finalArrivals = arrivals;
-                SNCFResponse finalDepartures = departures;
-                runOnUiThread(() ->
-                {
-                  this.arrivals.changeList(finalArrivals.arrivals);
-                  this.departures.changeList(finalDepartures.departures);
-                });
-            }
-            catch (Exception e)
-            {
-                e.printStackTrace();
-
-                ex = e;
-            }
-
-            if(ex != null)
-            {
-                String baseText = "Erreur lors de la récupération des données " + (arrivals != null ? "d'arrivées" : "de départ") + "\n" + ex.getMessage();
-
-                this.textDepartures.setText("");
-                this.textArrivals.setText(baseText);
-            }
-
-        }).start();
     }
 }

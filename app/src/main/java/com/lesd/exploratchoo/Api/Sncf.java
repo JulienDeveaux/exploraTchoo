@@ -21,11 +21,11 @@ public class Sncf
     private final HttpClient client;
     private final Gson gson;
 
-    public Sncf()
+    public Sncf(String api_key)
     {
         ArrayList<Header> defaultHeaders = new ArrayList<>();
 
-        defaultHeaders.add(new BasicHeader("Authorization", "c18b51c9-a711-41d0-9424-97aab2dded92"));
+        defaultHeaders.add(new BasicHeader("Authorization", api_key));
 
         this.client = HttpClientBuilder
                 .create()
