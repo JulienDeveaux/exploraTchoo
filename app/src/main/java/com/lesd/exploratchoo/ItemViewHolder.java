@@ -11,6 +11,8 @@ public class ItemViewHolder extends RecyclerView.ViewHolder
 
     public final TextView provenance;
     public final TextView type;
+    public final TextView Depart;
+    public final TextView Arrivee;
 
     public ItemViewHolder(@NonNull View itemView)
     {
@@ -18,5 +20,7 @@ public class ItemViewHolder extends RecyclerView.ViewHolder
 
         provenance = itemView.findViewById(R.id.provenance);
         type = itemView.findViewById(R.id.type);
+        Depart = itemView.findViewById(R.id.Depart);
+        Arrivee = itemView.findViewById(R.id.Arrivee);
     }
 }
