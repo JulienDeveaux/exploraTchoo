@@ -14,6 +14,10 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
+import android.widget.Spinner;
 import android.widget.TextView;
 
 import com.lesd.exploratchoo.Api.Sncf;
@@ -34,10 +38,14 @@ public class ScrollingActivity extends AppCompatActivity
     private TextView textArrivals;
     private TextView textDepartures;
 
+    private SncfLocations currentLocation;
+
     @Override
     protected void onCreate(Bundle savedInstanceState)
     {
         super.onCreate(savedInstanceState);
+
+        this.currentLocation = SncfLocations.LE_HAVRE;
 
         binding = ActivityScrollingBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
@@ -63,6 +71,27 @@ public class ScrollingActivity extends AppCompatActivity
 
         FloatingActionButton fab = binding.fab;
         fab.setOnClickListener(view -> loadDatas());
+
+        Spinner locations = binding.contentScrolling.locations;
+
+        assert locations != null;
+
+        ArrayAdapter<SncfLocations> adapter = new ArrayAdapter<>(this, androidx.appcompat.R.layout.support_simple_spinner_dropdown_item, SncfLocations.values());
+
+        locations.setAdapter(adapter);
+
+        locations.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> adapterView, View view, int i, long l) {
+                ScrollingActivity.this.currentLocation = adapter.getItem(i);
+                ScrollingActivity.this.loadDatas();
+            }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> adapterView) {
+
+            }
+        });
 
         this.loadDatas();
     }
@@ -93,24 +122,24 @@ public class ScrollingActivity extends AppCompatActivity
 
                try
                {
-                   arrivals = service.getHoraires(Sncf.QueryType.ARRIVALS);
-                   departures = service.getHoraires(Sncf.QueryType.DEPARTURES);
+                   arrivals = service.getHoraires(Sncf.QueryType.ARRIVALS, this.currentLocation);
+                   departures = service.getHoraires(Sncf.QueryType.DEPARTURES, this.currentLocation);
 
                    SNCFResponse finalArrivals = arrivals;
                    SNCFResponse finalDepartures = departures;
                    runOnUiThread(() ->
-                                 {
-                                     String tmp = "Arrivées de " + SncfLocations.LE_HAVRE.getDisplayName();
+                   {
+                        String tmp = "Arrivées de " + this.currentLocation;
 
-                                     this.textArrivals.setText(tmp);
+                        this.textArrivals.setText(tmp);
 
-                                     tmp = "Départs de " + SncfLocations.LE_HAVRE.getDisplayName();
+                        tmp = "Départs de " + this.currentLocation;
 
-                                     this.textDepartures.setText(tmp);
+                        this.textDepartures.setText(tmp);
 
-                                     this.arrivals.changeList(finalArrivals.arrivals);
-                                     this.departures.changeList(finalDepartures.departures);
-                                 });
+                        this.arrivals.changeList(finalArrivals.arrivals);
+                        this.departures.changeList(finalDepartures.departures);
+                   });
                }
                catch (Exception e)
                {

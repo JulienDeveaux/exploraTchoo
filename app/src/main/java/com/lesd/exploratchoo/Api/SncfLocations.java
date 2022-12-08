@@ -1,5 +1,7 @@
 package com.lesd.exploratchoo.Api;
 
+import androidx.annotation.NonNull;
+
 import java.util.Locale;
 
 public enum SncfLocations
@@ -30,9 +32,10 @@ public enum SncfLocations
         return displayName;
     }
 
+    @NonNull
     @Override
     public String toString()
     {
-        return this.id;
+        return this.displayName;
     }
 }

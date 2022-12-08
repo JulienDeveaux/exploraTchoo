@@ -55,7 +55,7 @@ public class Sncf
      */
     public SNCFResponse getHoraires(QueryType type, SncfLocations location) throws IOException
     {
-        String url = BASE_URL + "stop_areas/stop_area:" + location + "/";
+        String url = BASE_URL + "stop_areas/stop_area:" + location.getId() + "/";
 
         switch (type)
         {

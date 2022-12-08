@@ -13,10 +13,18 @@
         android:layout_height="match_parent"
         android:orientation="vertical"
         android:padding="10dp">
+
+        <Spinner
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:id="@+id/locations">
+
+        </Spinner>
+
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Arrivée du havre"
+            android:text="Arrivées de"
             android:id="@+id/text_arrive"
             android:textSize="25sp"
             android:layout_gravity="top"/>
@@ -30,7 +38,7 @@
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Départ du havre"
+            android:text="Départs de"
             android:id="@+id/text_depart"
             android:textSize="25sp"
             android:layout_marginTop="20dp"
