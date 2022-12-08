@@ -4,7 +4,12 @@ import java.util.Locale;
 
 public enum SncfLocations
 {
-    LE_HAVRE("SNCF:87413013");
+    LE_HAVRE("SNCF:87413013"),
+    ROUEN("SNCF:87401893"),
+    PARIS_SAINT_LAZARE("SNCF:87384008"),
+    PARIS_GARE_DU_NORD("SNCF:87271007"),
+    YVETOT("SNCF:87413385"),
+    BREAUTE_BAUZEVILLE("SNCF:87413344");
 
     private final String displayName;
     private final String id;

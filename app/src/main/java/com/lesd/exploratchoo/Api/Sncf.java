@@ -72,9 +72,7 @@ public class Sncf
         HttpResponse response = this.client.execute(new HttpGet(url));
 
         if(response.getStatusLine().getStatusCode() != 200)
-        {
-            throw new IOException("API call failed with status code " + response.getStatusLine().getStatusCode());
-        }
+            throw new IOException("API call failed with status code " + response.getStatusLine().getStatusCode() + " and reason: \n" + this.readContent(response.getEntity()));
 
         HttpEntity entity = response.getEntity();
         String content = this.readContent(entity);
