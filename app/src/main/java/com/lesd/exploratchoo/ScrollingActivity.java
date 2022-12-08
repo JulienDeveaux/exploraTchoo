@@ -33,20 +33,6 @@ public class ScrollingActivity extends AppCompatActivity
 
         Sncf service = new Sncf();
 
-        String message = "";
-
-        try
-        {
-            SNCFResponse response = service.getHoraires(Sncf.Type.ARRIVALS);
-
-            message = Arrays.stream(response.arrivals).map(arrDep -> arrDep.display_informations.name).collect(Collectors.joining(", "));
-        }
-        catch (Exception e)
-        {
-            message = e.getMessage();
-            e.printStackTrace();
-        }
-
         binding = ActivityScrollingBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
 
@@ -68,8 +54,25 @@ public class ScrollingActivity extends AppCompatActivity
 
         TextView textView = binding.contentScrolling.textView;
 
-        assert textView != null;
-        textView.setText(message);
+        new Thread(() ->
+        {
+            try
+            {
+                SNCFResponse response = service.getHoraires(Sncf.Type.ARRIVALS);
+
+                String text = Arrays.stream(response.arrivals)
+                        .map(arrDep -> arrDep.display_informations.headsign)
+                        .collect(Collectors.joining(", "));
+
+                runOnUiThread(() -> textView.setText(text));
+            }
+            catch (Exception e)
+            {
+                runOnUiThread(() -> textView.setText(e.getMessage()));
+
+                e.printStackTrace();
+            }
+        }).start();
     }
 
     @Override

@@ -1,6 +1,7 @@
 package com.lesd.exploratchoo.Api;
 
 import com.google.firebase.crashlytics.buildtools.reloc.org.apache.http.Header;
+import com.google.firebase.crashlytics.buildtools.reloc.org.apache.http.HttpEntity;
 import com.google.firebase.crashlytics.buildtools.reloc.org.apache.http.HttpResponse;
 import com.google.firebase.crashlytics.buildtools.reloc.org.apache.http.client.HttpClient;
 import com.google.firebase.crashlytics.buildtools.reloc.org.apache.http.client.methods.HttpGet;
@@ -46,9 +47,15 @@ public class Sncf
 
         HttpResponse response = this.client.execute(new HttpGet(url));
 
-        String json = response.toString();
+        HttpEntity entity = response.getEntity();
 
-        return new GsonBuilder().create().fromJson(json, SNCFResponse.class);
+        byte[] bytes = new byte[(int) entity.getContentLength()];
+
+        int res = entity.getContent().read(bytes, 0, bytes.length);
+
+        String content = new String(bytes);
+
+        return new GsonBuilder().create().fromJson(content, SNCFResponse.class);
     }
 
     public enum Type
