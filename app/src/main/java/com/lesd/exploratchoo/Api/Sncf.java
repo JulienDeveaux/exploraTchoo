@@ -1,14 +1,13 @@
 package com.lesd.exploratchoo.Api;
 
+import com.google.firebase.crashlytics.buildtools.reloc.org.apache.http.Header;
+import com.google.firebase.crashlytics.buildtools.reloc.org.apache.http.HttpResponse;
+import com.google.firebase.crashlytics.buildtools.reloc.org.apache.http.client.HttpClient;
+import com.google.firebase.crashlytics.buildtools.reloc.org.apache.http.client.methods.HttpGet;
+import com.google.firebase.crashlytics.buildtools.reloc.org.apache.http.impl.client.HttpClientBuilder;
+import com.google.firebase.crashlytics.buildtools.reloc.org.apache.http.message.BasicHeader;
 import com.google.gson.GsonBuilder;
 import com.lesd.exploratchoo.Api.models.SNCFResponse;
-
-import org.apache.hc.client5.http.classic.HttpClient;
-import org.apache.hc.client5.http.classic.methods.HttpGet;
-import org.apache.hc.client5.http.impl.classic.HttpClientBuilder;
-import org.apache.hc.core5.http.Header;
-import org.apache.hc.core5.http.HttpResponse;
-import org.apache.hc.core5.http.message.BasicHeader;
 
 import java.io.IOException;
 import java.util.ArrayList;

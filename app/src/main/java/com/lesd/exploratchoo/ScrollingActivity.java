@@ -68,6 +68,7 @@ public class ScrollingActivity extends AppCompatActivity
 
         TextView textView = binding.contentScrolling.textView;
 
+        assert textView != null;
         textView.setText(message);
     }
 
