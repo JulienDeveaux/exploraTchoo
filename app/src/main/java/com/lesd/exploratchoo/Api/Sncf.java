@@ -55,7 +55,7 @@ public class Sncf
      */
     public SNCFResponse getHoraires(QueryType type, SncfLocations location) throws IOException
     {
-        String url = BASE_URL + "stop_areas/stop_area:" + location + "/?data_freshness=realtime";
+        String url = BASE_URL + "stop_areas/stop_area:" + location + "/";
 
         switch (type)
         {
@@ -67,7 +67,14 @@ public class Sncf
                 break;
         }
 
+        url += "?data_freshness=realtime";
+
         HttpResponse response = this.client.execute(new HttpGet(url));
+
+        if(response.getStatusLine().getStatusCode() != 200)
+        {
+            throw new IOException("API call failed with status code " + response.getStatusLine().getStatusCode());
+        }
 
         HttpEntity entity = response.getEntity();
         String content = this.readContent(entity);
