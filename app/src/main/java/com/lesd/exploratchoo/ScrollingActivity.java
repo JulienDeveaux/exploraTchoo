@@ -90,7 +90,7 @@ public class ScrollingActivity extends AppCompatActivity
         new Thread(() ->
         {
             try {
-                SNCFResponse response = service.getHoraires(Sncf.Type.ARRIVALS);
+                SNCFResponse response = service.getHoraires(Sncf.QueryType.ARRIVALS);
 
                 Arrivals.append("Provenance|");
                 Arrivals.append("Type|");
@@ -119,7 +119,7 @@ public class ScrollingActivity extends AppCompatActivity
             }
 
             try {
-                SNCFResponse response = service.getHoraires(Sncf.Type.DEPARTURES);
+                SNCFResponse response = service.getHoraires(Sncf.QueryType.DEPARTURES);
 
                 Departures.append("Destination|");
                 Departures.append("Type|");
