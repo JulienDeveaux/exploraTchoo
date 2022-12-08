@@ -10,6 +10,8 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.lesd.exploratchoo.Api.models.ArrDep;
 
+import java.time.format.DateTimeFormatterBuilder;
+import java.time.temporal.ChronoField;
 import java.util.ArrayList;
 import java.util.Arrays;
 
@@ -49,6 +51,30 @@ public class RecyclerViewAdapter extends RecyclerView.Adapter<ItemViewHolder>
 
         holder.provenance.setText(item.display_informations.label);
         holder.type.setText(item.display_informations.physical_mode);
+        holder.Depart.setText(item.stop_date_time.getDepartureDateTime()
+                .format(new DateTimeFormatterBuilder()
+                        .appendValue(ChronoField.YEAR)
+                        .appendLiteral("/")
+                        .appendValue(ChronoField.MONTH_OF_YEAR)
+                        .appendLiteral("/")
+                        .appendValue(ChronoField.DAY_OF_MONTH)
+                        .appendLiteral(" ")
+                        .appendValue(ChronoField.HOUR_OF_DAY)
+                        .appendLiteral(":")
+                        .appendValue(ChronoField.MINUTE_OF_HOUR)
+                        .toFormatter()));
+        holder.Arrivee.setText(item.stop_date_time.getArrivalDateTime()
+                .format(new DateTimeFormatterBuilder()
+                        .appendValue(ChronoField.YEAR)
+                        .appendLiteral("/")
+                        .appendValue(ChronoField.MONTH_OF_YEAR)
+                        .appendLiteral("/")
+                        .appendValue(ChronoField.DAY_OF_MONTH)
+                        .appendLiteral(" ")
+                        .appendValue(ChronoField.HOUR_OF_DAY)
+                        .appendLiteral(":")
+                        .appendValue(ChronoField.MINUTE_OF_HOUR)
+                        .toFormatter()));
     }
 
     @Override
