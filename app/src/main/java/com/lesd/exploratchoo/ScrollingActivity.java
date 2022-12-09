@@ -125,10 +125,50 @@ public class ScrollingActivity extends AppCompatActivity
                    arrivals = service.getHoraires(Sncf.QueryType.ARRIVALS, this.currentLocation);
                    departures = service.getHoraires(Sncf.QueryType.DEPARTURES, this.currentLocation);
 
-                   SNCFResponse finalArrivals = arrivals;
-                   SNCFResponse finalDepartures = departures;
-                   runOnUiThread(() ->
-                   {
+                    Thread[] threads = new Thread[arrivals.arrivals.length];
+                    for (int i = 0; i < arrivals.arrivals.length; i++) {
+                        final ArrDep[] data = {arrivals.arrivals[i]};
+                        Runnable th = () ->
+                        {
+                            Sncf localService = new Sncf(api_key);
+                            data[0] = localService.rectifyTime(data[0], Sncf.QueryType.ARRIVALS);
+                        };
+                        Thread run = new Thread(th);
+                        run.start();
+                        threads[i] = run;
+                    }
+                    for (Thread thread : threads) {
+                        try {
+                            thread.join();
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
+                    }
+
+                    threads = new Thread[departures.departures.length];
+                    for (int i = 0; i < departures.departures.length; i++) {
+                        final ArrDep[] data = {departures.departures[i]};
+                        Runnable th = () ->
+                        {
+                            Sncf localService = new Sncf(api_key);
+                            data[0] = localService.rectifyTime(data[0], Sncf.QueryType.DEPARTURES);
+                        };
+                        Thread run = new Thread(th);
+                        run.start();
+                        threads[i] = run;
+                    }
+                    for (Thread thread : threads) {
+                        try {
+                            thread.join();
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
+                    }
+
+                    SNCFResponse finalArrivals = arrivals;
+                    SNCFResponse finalDepartures = departures;
+                    runOnUiThread(() ->
+                    {
                         String tmp = "Arrivées de " + this.currentLocation;
 
                         this.textArrivals.setText(tmp);

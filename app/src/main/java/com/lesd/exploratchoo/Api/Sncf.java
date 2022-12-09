@@ -1,5 +1,7 @@
 package com.lesd.exploratchoo.Api;
 
+import static com.lesd.exploratchoo.Api.Sncf.QueryType.ARRIVALS;
+
 import com.google.firebase.crashlytics.buildtools.reloc.org.apache.http.Header;
 import com.google.firebase.crashlytics.buildtools.reloc.org.apache.http.HttpEntity;
 import com.google.firebase.crashlytics.buildtools.reloc.org.apache.http.HttpResponse;
@@ -9,7 +11,9 @@ import com.google.firebase.crashlytics.buildtools.reloc.org.apache.http.impl.cli
 import com.google.firebase.crashlytics.buildtools.reloc.org.apache.http.message.BasicHeader;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.lesd.exploratchoo.Api.models.ArrDep;
 import com.lesd.exploratchoo.Api.models.SNCFResponse;
+import com.lesd.exploratchoo.Api.models.VehicleSNCFResponse;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -20,6 +24,7 @@ public class Sncf
 
     private final HttpClient client;
     private final Gson gson;
+    private final String api_key;
 
     public Sncf(String api_key)
     {
@@ -33,6 +38,8 @@ public class Sncf
                 .build();
 
         this.gson = new GsonBuilder().create();
+
+        this.api_key = api_key;
     }
 
     /**
@@ -82,6 +89,60 @@ public class Sncf
         sncfResponse.queryType = type;
 
         return sncfResponse;
+    }
+
+    public ArrDep rectifyTime(ArrDep data, QueryType type) {
+        try {
+            ArrayList<Header> defaultHeaders = new ArrayList<>();
+
+            defaultHeaders.add(new BasicHeader("Authorization", this.api_key));
+            HttpClient localClient = HttpClientBuilder
+                    .create()
+                    .setDefaultHeaders(defaultHeaders)
+                    .build();
+            String vehicleJourneyId = data.links[1].id;
+            String vehicleJourneyUrl = BASE_URL +
+                    "vehicle_journeys/" +
+                    vehicleJourneyId +
+                    "?filter=vehicle_journeys.has_code(headsign," +
+                    data.display_informations.headsign +
+                    ")";
+
+            HttpResponse vehicleResponse = localClient.execute(new HttpGet(vehicleJourneyUrl));
+
+            HttpEntity vehicleEntity = vehicleResponse.getEntity();
+            String vehicleContent = this.readContent(vehicleEntity);
+
+            VehicleSNCFResponse vehicleSncfResponse = this.gson.fromJson(vehicleContent, VehicleSNCFResponse.class);
+            String firstArrivalTime = "";
+            String lastArrivalTime = "";
+            if (type.equals(ARRIVALS)) {
+                if (vehicleSncfResponse.vehicle_journeys[0].stop_times[0].stop_point.name.equals("Le Havre")) {
+                    firstArrivalTime = vehicleSncfResponse.vehicle_journeys[0].stop_times[0].arrival_time;
+                    lastArrivalTime = vehicleSncfResponse.vehicle_journeys[0].stop_times[vehicleSncfResponse.vehicle_journeys[0].stop_times.length - 1].arrival_time;
+                } else {
+                    firstArrivalTime = vehicleSncfResponse.vehicle_journeys[0].stop_times[vehicleSncfResponse.vehicle_journeys[0].stop_times.length - 1].arrival_time;
+                    lastArrivalTime = vehicleSncfResponse.vehicle_journeys[0].stop_times[0].arrival_time;
+                }
+            } else {
+                if (!vehicleSncfResponse.vehicle_journeys[0].stop_times[0].stop_point.name.equals("Le Havre")) {
+                    firstArrivalTime = vehicleSncfResponse.vehicle_journeys[0].stop_times[0].arrival_time;
+                    lastArrivalTime = vehicleSncfResponse.vehicle_journeys[0].stop_times[vehicleSncfResponse.vehicle_journeys[0].stop_times.length - 1].arrival_time;
+                } else {
+                    firstArrivalTime = vehicleSncfResponse.vehicle_journeys[0].stop_times[vehicleSncfResponse.vehicle_journeys[0].stop_times.length - 1].arrival_time;
+                    lastArrivalTime = vehicleSncfResponse.vehicle_journeys[0].stop_times[0].arrival_time;
+                }
+            }
+            String before_arrival_date_time = data.stop_date_time.arrival_date_time;
+            String before_departure_date_time = data.stop_date_time.departure_date_time;
+            String now_arrival_date_time = before_arrival_date_time.substring(0, before_arrival_date_time.indexOf("T") + 1) + firstArrivalTime;
+            String now_departure_date_time = before_departure_date_time.substring(0, before_departure_date_time.indexOf("T") + 1) + lastArrivalTime;
+            data.stop_date_time.arrival_date_time = now_arrival_date_time;
+            data.stop_date_time.departure_date_time = now_departure_date_time;
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return data;
     }
 
     private String readContent(HttpEntity entity) throws IOException
