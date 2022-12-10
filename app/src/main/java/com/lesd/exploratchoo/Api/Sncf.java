@@ -1,8 +1,5 @@
 package com.lesd.exploratchoo.Api;
 
-import static com.lesd.exploratchoo.Api.Sncf.QueryType.ARRIVALS;
-import static com.lesd.exploratchoo.Api.Sncf.QueryType.DEPARTURES;
-
 import com.google.firebase.crashlytics.buildtools.reloc.org.apache.http.Header;
 import com.google.firebase.crashlytics.buildtools.reloc.org.apache.http.HttpEntity;
 import com.google.firebase.crashlytics.buildtools.reloc.org.apache.http.HttpResponse;
@@ -14,7 +11,6 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.lesd.exploratchoo.Api.models.ArrDep;
 import com.lesd.exploratchoo.Api.models.SNCFResponse;
-import com.lesd.exploratchoo.Api.models.VehicleSNCFResponse;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -102,7 +98,7 @@ public class Sncf
 
             String vehicleContent = this.readContent(vehicleResponse.getEntity());
 
-            VehicleSNCFResponse vehicleSncfResponse = this.gson.fromJson(vehicleContent, VehicleSNCFResponse.class);
+            SNCFResponse vehicleSncfResponse = this.gson.fromJson(vehicleContent, SNCFResponse.class);
 
 
             String firstArrivalTime = vehicleSncfResponse.vehicle_journeys[0].stop_times[vehicleSncfResponse.vehicle_journeys[0].stop_times.length - 1].arrival_time;

@@ -1,5 +1,5 @@
 package com.lesd.exploratchoo.Api.models;
 
-public class vehicle_journeys {
+public class VehicleJourneys {
     public stop_times[] stop_times;
 }
