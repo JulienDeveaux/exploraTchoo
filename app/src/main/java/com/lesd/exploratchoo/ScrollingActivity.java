@@ -51,21 +51,20 @@ public class ScrollingActivity extends AppCompatActivity
         this.currentLocation = SncfLocations.LE_HAVRE;
 
         binding = ActivityScrollingBinding.inflate(getLayoutInflater());
+        setContentView(binding.getRoot());
 
         swipeLayout = binding.contentScrolling.swipe;
-
-        setContentView(binding.getRoot());
 
         RecyclerView arrivalsRecyclerView = binding.contentScrolling.arrivalsRecyclerView;
         RecyclerView departuresRecyclerView = binding.contentScrolling.departRecyclerView;
 
-        this.arrivals = new RecyclerViewAdapter(new ArrDep[0], Sncf.QueryType.ARRIVALS);
+        this.arrivals   = new RecyclerViewAdapter(new ArrDep[0], Sncf.QueryType.ARRIVALS);
         this.departures = new RecyclerViewAdapter(new ArrDep[0], Sncf.QueryType.DEPARTURES);
 
-        this.textArrivals = binding.contentScrolling.textArrive;
+        this.textArrivals   = binding.contentScrolling.textArrive;
         this.textDepartures = binding.contentScrolling.textDepart;
 
-        arrivalsRecyclerView.setAdapter(this.arrivals);
+        arrivalsRecyclerView  .setAdapter(this.arrivals);
         departuresRecyclerView.setAdapter(this.departures);
 
         Toolbar toolbar = binding.toolbar;
@@ -78,23 +77,20 @@ public class ScrollingActivity extends AppCompatActivity
 
         Spinner locations = binding.contentScrolling.locations;
 
-        assert locations != null;
-
         ArrayAdapter<SncfLocations> adapter = new ArrayAdapter<>(this, androidx.appcompat.R.layout.support_simple_spinner_dropdown_item, SncfLocations.values());
-
         locations.setAdapter(adapter);
 
-        locations.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+        locations.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener()
+        {
             @Override
-            public void onItemSelected(AdapterView<?> adapterView, View view, int i, long l) {
+            public void onItemSelected(AdapterView<?> adapterView, View view, int i, long l)
+            {
                 ScrollingActivity.this.currentLocation = adapter.getItem(i);
                 ScrollingActivity.this.loadDatas();
             }
 
             @Override
-            public void onNothingSelected(AdapterView<?> adapterView) {
-
-            }
+            public void onNothingSelected(AdapterView<?> adapterView) {}
         });
 
         swipeLayout.setOnRefreshListener(this::loadDatas);
@@ -117,8 +113,8 @@ public class ScrollingActivity extends AppCompatActivity
         {
             runOnUiThread(() ->
             {
-              this.textArrivals.setText(R.string.no_api_key);
-              this.textDepartures.setText("");
+                this.textArrivals.setText(R.string.no_api_key);
+                this.textDepartures.setText("");
                 this.swipeLayout.setRefreshing(false);
             });
         }
@@ -126,36 +122,27 @@ public class ScrollingActivity extends AppCompatActivity
         {
             new Thread(() ->
             {
-               SNCFResponse arrivals = null;
-               SNCFResponse departures = null;
+               ArrDep[] arrivals = null;
+               ArrDep[] departures;
                Exception ex = null;
 
                try
                {
-                   arrivals = service.getHoraires(Sncf.QueryType.ARRIVALS, this.currentLocation);
-                   departures = service.getHoraires(Sncf.QueryType.DEPARTURES, this.currentLocation);
+                   arrivals = service.getHoraires(Sncf.QueryType.ARRIVALS, this.currentLocation).arrivals;
+                   departures = service.getHoraires(Sncf.QueryType.DEPARTURES, this.currentLocation).departures;
 
-                    Thread[] threads = new Thread[arrivals.arrivals.length + departures.departures.length];
+                    Thread[] threads = new Thread[arrivals.length + departures.length];
 
-                    for (int i = 0; i < arrivals.arrivals.length; i++)
+                    for (int i = 0; i < threads.length; i++)
                     {
-                        final ArrDep data = arrivals.arrivals[i];
+                        boolean isArrivals = i < arrivals.length;
+                        final ArrDep data = isArrivals ? arrivals[i] : departures[i-arrivals.length];
 
-                        Thread run = new Thread(() -> service.rectifyTime(data, Sncf.QueryType.ARRIVALS));
+                        Thread run = new Thread(() -> service.rectifyTime(data, isArrivals ? Sncf.QueryType.ARRIVALS : Sncf.QueryType.DEPARTURES));
                         run.start();
 
                         threads[i] = run;
                     }
-
-                   for (int i = 0; i < departures.departures.length; i++)
-                   {
-                       final ArrDep data = departures.departures[i];
-
-                       Thread run = new Thread(() -> service.rectifyTime(data, Sncf.QueryType.DEPARTURES));
-                       run.start();
-
-                       threads[arrivals.arrivals.length + i] = run;
-                   }
 
                     for (Thread thread : threads)
                     {
@@ -169,8 +156,8 @@ public class ScrollingActivity extends AppCompatActivity
                         }
                     }
 
-                    SNCFResponse finalArrivals = arrivals;
-                    SNCFResponse finalDepartures = departures;
+                    ArrDep[] finalArrivals = arrivals;
+                    ArrDep[] finalDepartures = departures;
 
                     runOnUiThread(() ->
                     {
@@ -182,8 +169,8 @@ public class ScrollingActivity extends AppCompatActivity
 
                         this.textDepartures.setText(tmp);
 
-                        this.arrivals.changeList(finalArrivals.arrivals);
-                        this.departures.changeList(finalDepartures.departures);
+                        this.arrivals.changeList(finalArrivals);
+                        this.departures.changeList(finalDepartures);
                         this.swipeLayout.setRefreshing(false);
                    });
                }
@@ -202,7 +189,7 @@ public class ScrollingActivity extends AppCompatActivity
                    {
                         this.textDepartures.setText("");
                         this.textArrivals.setText(baseText);
-                       this.swipeLayout.setRefreshing(false);
+                        this.swipeLayout.setRefreshing(false);
                    });
                }
 
