@@ -11,6 +11,7 @@ import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 import androidx.recyclerview.widget.RecyclerView;
+import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
 import android.view.Menu;
 import android.view.MenuItem;
@@ -32,6 +33,8 @@ public class ScrollingActivity extends AppCompatActivity
     private ActivityScrollingBinding binding;
     private Sncf service;
 
+    private SwipeRefreshLayout swipeLayout;
+
     private RecyclerViewAdapter arrivals;
     private RecyclerViewAdapter departures;
 
@@ -48,20 +51,21 @@ public class ScrollingActivity extends AppCompatActivity
         this.currentLocation = SncfLocations.LE_HAVRE;
 
         binding = ActivityScrollingBinding.inflate(getLayoutInflater());
+
+        swipeLayout = binding.contentScrolling.swipe;
+
         setContentView(binding.getRoot());
 
         RecyclerView arrivalsRecyclerView = binding.contentScrolling.arrivalsRecyclerView;
         RecyclerView departuresRecyclerView = binding.contentScrolling.departRecyclerView;
 
-        this.arrivals = new RecyclerViewAdapter(new ArrDep[0]);
-        this.departures = new RecyclerViewAdapter(new ArrDep[0]);
+        this.arrivals = new RecyclerViewAdapter(new ArrDep[0], Sncf.QueryType.ARRIVALS);
+        this.departures = new RecyclerViewAdapter(new ArrDep[0], Sncf.QueryType.DEPARTURES);
 
         this.textArrivals = binding.contentScrolling.textArrive;
         this.textDepartures = binding.contentScrolling.textDepart;
 
-        assert arrivalsRecyclerView != null;
         arrivalsRecyclerView.setAdapter(this.arrivals);
-        assert departuresRecyclerView != null;
         departuresRecyclerView.setAdapter(this.departures);
 
         Toolbar toolbar = binding.toolbar;
@@ -93,16 +97,21 @@ public class ScrollingActivity extends AppCompatActivity
             }
         });
 
-        this.loadDatas();
+        swipeLayout.setOnRefreshListener(this::loadDatas);
     }
 
     private void loadDatas()
     {
+        this.swipeLayout.setRefreshing(true);
+
         SharedPreferences preferences = this.getSharedPreferences("com.lesd.exploratchoo", MODE_PRIVATE);
 
         String api_key = preferences.getString("api_key", null);
 
-        service = new Sncf(api_key);
+        if(service == null)
+            service = new Sncf(api_key);
+
+        service.majApiKey(api_key);
 
         if(api_key == null || api_key.isEmpty())
         {
@@ -110,6 +119,7 @@ public class ScrollingActivity extends AppCompatActivity
             {
               this.textArrivals.setText(R.string.no_api_key);
               this.textDepartures.setText("");
+                this.swipeLayout.setRefreshing(false);
             });
         }
         else
@@ -125,48 +135,43 @@ public class ScrollingActivity extends AppCompatActivity
                    arrivals = service.getHoraires(Sncf.QueryType.ARRIVALS, this.currentLocation);
                    departures = service.getHoraires(Sncf.QueryType.DEPARTURES, this.currentLocation);
 
-                    Thread[] threads = new Thread[arrivals.arrivals.length];
-                    for (int i = 0; i < arrivals.arrivals.length; i++) {
-                        final ArrDep[] data = {arrivals.arrivals[i]};
-                        Runnable th = () ->
-                        {
-                            Sncf localService = new Sncf(api_key);
-                            data[0] = localService.rectifyTime(data[0], Sncf.QueryType.ARRIVALS);
-                        };
-                        Thread run = new Thread(th);
+                    Thread[] threads = new Thread[arrivals.arrivals.length + departures.departures.length];
+
+                    for (int i = 0; i < arrivals.arrivals.length; i++)
+                    {
+                        final ArrDep data = arrivals.arrivals[i];
+
+                        Thread run = new Thread(() -> service.rectifyTime(data, Sncf.QueryType.ARRIVALS));
                         run.start();
+
                         threads[i] = run;
-                    }
-                    for (Thread thread : threads) {
-                        try {
-                            thread.join();
-                        } catch (InterruptedException e) {
-                            e.printStackTrace();
-                        }
                     }
 
-                    threads = new Thread[departures.departures.length];
-                    for (int i = 0; i < departures.departures.length; i++) {
-                        final ArrDep[] data = {departures.departures[i]};
-                        Runnable th = () ->
+                   for (int i = 0; i < departures.departures.length; i++)
+                   {
+                       final ArrDep data = departures.departures[i];
+
+                       Thread run = new Thread(() -> service.rectifyTime(data, Sncf.QueryType.DEPARTURES));
+                       run.start();
+
+                       threads[arrivals.arrivals.length + i] = run;
+                   }
+
+                    for (Thread thread : threads)
+                    {
+                        try
                         {
-                            Sncf localService = new Sncf(api_key);
-                            data[0] = localService.rectifyTime(data[0], Sncf.QueryType.DEPARTURES);
-                        };
-                        Thread run = new Thread(th);
-                        run.start();
-                        threads[i] = run;
-                    }
-                    for (Thread thread : threads) {
-                        try {
                             thread.join();
-                        } catch (InterruptedException e) {
+                        }
+                        catch (InterruptedException e)
+                        {
                             e.printStackTrace();
                         }
                     }
 
                     SNCFResponse finalArrivals = arrivals;
                     SNCFResponse finalDepartures = departures;
+
                     runOnUiThread(() ->
                     {
                         String tmp = "Arrivées de " + this.currentLocation;
@@ -179,6 +184,7 @@ public class ScrollingActivity extends AppCompatActivity
 
                         this.arrivals.changeList(finalArrivals.arrivals);
                         this.departures.changeList(finalDepartures.departures);
+                        this.swipeLayout.setRefreshing(false);
                    });
                }
                catch (Exception e)
@@ -193,10 +199,11 @@ public class ScrollingActivity extends AppCompatActivity
                    String baseText = "Erreur lors de la récupération des données " + (arrivals != null ? "d'arrivées" : "de départ") + "\n" + ex.getMessage();
 
                    runOnUiThread(() ->
-                                 {
-                                     this.textDepartures.setText("");
-                                     this.textArrivals.setText(baseText);
-                                 });
+                   {
+                        this.textDepartures.setText("");
+                        this.textArrivals.setText(baseText);
+                       this.swipeLayout.setRefreshing(false);
+                   });
                }
 
             }).start();
