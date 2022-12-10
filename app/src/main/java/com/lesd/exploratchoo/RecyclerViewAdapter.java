@@ -17,6 +17,8 @@ import java.time.format.DateTimeFormatterBuilder;
 import java.time.temporal.ChronoField;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Comparator;
+import java.util.List;
 
 public class RecyclerViewAdapter extends RecyclerView.Adapter<ItemViewHolder>
 {
@@ -34,8 +36,12 @@ public class RecyclerViewAdapter extends RecyclerView.Adapter<ItemViewHolder>
     @SuppressLint("NotifyDataSetChanged")
     public void changeList(ArrDep[] newElements)
     {
+        List<ArrDep> tmp = Arrays.asList(newElements);
+
+        tmp.sort(Comparator.comparing(arrDep -> arrDep.stop_date_time.getDepartureDateTime()));
+
         this.listElements.clear();
-        this.listElements.addAll(Arrays.asList(newElements));
+        this.listElements.addAll(tmp);
 
         this.notifyDataSetChanged();
     }
